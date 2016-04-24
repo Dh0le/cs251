@@ -5,180 +5,187 @@
 
 using namespace std;
 
-typedef struct node{
-	string name = NULL;
-	edge* es = (edge*)malloc(sizeof(edge)*2000);
-	edge* po = es;
-	int nume = 0;
-	double distance = -1;
-};
+int trueset = 0; //for the loop of dij's algorithm
+const double MINDOUBLE = 999999999.99;//infinity;
 
-typedef struct edge{
-	node c1
-	node c2
-	double price;	
-};
-typedef struct queuer{
-	node city;
-	queuer *next;
-};
-void Enqueue(node x) {
-	queuer * temp = (queuer *)malloc(sizeof(queuer));
-	temp->city =x; 
-	temp->next = NULL;
-	if(front == NULL && rear == NULL){
-		front = rear = temp;
-		return;
-	}
-	rear->next = temp;
-	rear = temp;
-}
-void Dequeue() {
-	queuer* temp = front;
-	if(front == NULL) {
-		//printf("Queue is Empty\n");
-		return;
-	}
-	if(front == rear) {
-		front = rear = NULL;
-	}
-	else {
-		front = front->next;
-	}
-	free(temp);
-}
-int Front() {
-	if(front == NULL) {
-		//printf("Queue is empty\n");
-		return;
-	}
-	return front->data;
-}
-/*
-	Graph class for use in Project 5.
+typedef struct Node { //each airport
+	Node(){};
+	Edge * edgeList[];//edges
+	string value;//name
+	int numOfEdge = 0;//default no edge
+	bool visited = false;//default not visited
 	
-	This provided code does not include any specific data structure
-	for storing a graph, only a list of methods that will be called 
-	from main. Based on the project handout and the lecture slides,
-	select a method for storing the graph and implement it here.
-
-*/
-
-// Constructor for Graph. Read in data from the input
-// and set up your data structures here.
-Graph::Graph()
-{	
-	int num_city;
-	int num_edge;
-	queuer front = NULL;
-	queuer rear = NULL;
+	void addEdgeTo(Node * node) {// add an edge to input node
+		Edge * edge = new Edge();
+		edge->to = node;
+		edgeList[numOfEdge++] = edge;
+	}
 	
-	cin>>num_city;
-	cin>>num_edge;
-	string dest_name;
-	string dest_name1;
-	double weight;
-	node *array;
-	edge *array1;
-	array = node[num_city];
-	array1 = edge[num_edge];
-	edge temp;
-	int num_node;
-	int num_node1;
-	int j = 0;
-	for(int i = 0;i < num_edge;i++){
-		cin>>dest_name;
-		cin>>dest_name1;
-		cin>>weight;
-		temp.price = weight;
-		if(checker(dest_name,array,num_city)!= -1){
-			if(checker(dest_name1,array,num_city) == -1){
-				array[j].name = dest_name1;
-				num_node = checker(dest_name,array,num_city);
-				temp.c1 = array[num_node];
-				temp.c2 = array[j];
-				*(array[j].po) = temp;
-				array[j].po++;
-				array[j].nume++;
-				array[num_node].po = temp;
-				array[num_node].po++;
-				array[num_node].nume++;
-				j++;
-			}
-			else if(checker(dest_name1,array,num_city)!= -1){
-				num_node = checker(dest_name,array,num_city);
-				temp.c1 = array[num_node];
-				num_node1 = checker(dest_name1,array,num_city);
-				temp.c2 = array[num_node1];
-				array[num_node1].po = temp;
-				array[num_node1].po++;
-				array[num_node1].nume++;
-				array[num_node].po = temp;
-				array[num_node].po++;
-				array[num_node].nume++;
-			}
-			
-		}
-		if(checker(dest_name,array,num_city) == -1){
-			if(checker(dest_name1,array,num_city) == -1){
+};
 
-				array[j].name = dest_name;
-				array[j+1].name = dest_name1
-				temp.c1 = array[j];
-				temp.c2 = array[j+1];
-				array[j].po = temp;
-				array[j+1].po = temp;
-				array[j].po++;
-				array[j].nume++;
-				array[j+1].po++;
-				array[j+1].nume++;
-				j+=2;
-			}
-			else if(checker(dest_name1,array,num_city)!=-1){
-				array[j].name = dest_name;
-				num_node = checker(dest_name1,array,num_city);
-				temp.c1 = array[j];
-				temp.c2 = array[num_node];
-				array[j].po = temp;
-				array[j].nume++:
-				array[j].po++;
-				array[num_node].po = temp;
-				array[num_node].po++;
-				array[num_node].nume++;
-				j++;
-			}
+typedef struct Edge {
+	Edge() {};
+	Node * to;//the airport it is connected to
+	double weight;//price
+};
+
+Node * nodeList[];
+
+Graph::Graph() {
+	int numedge;// number of edge
+	int numair;//number of airport
+	cin>>numair;
+	cin>>numedge;
+	string from;//from airport
+	string dest;//destination airport
+	double weight;//price
+	cin>>weight;
+	Edge * edgeset[numOfEdge];//new array of edges can be stored in node
+	string name[numair];//array of airport name and used to match the index of following array;
+	int counter = 0;//to store airport name in name
+	int counter1 = 0;//to store node in nodeList
+	
+	nodeList = new Node[numedge];//node list, to check if the node are repeated.
+	
+	for(int i = 0; i < numedge;i++){
+		scanf("%s%s%d",&from,&dest,weight);// scann two destination and price
+		Node * nodeFrom = findNode(from);// see if the from airport is a node
+		Node * nodeTo = findNode(dest);// see if the dest airport is a node
+		
+		if(nodeFrom && nodeTo) {//both exist
+			if(!findEdge(nodeFrom, dest)) {
+				nodeFrom->addEdgeTo(nodeTo);
+				nodeTo->addEdgeTo(nodeFrom);
+			}				
 		}
-	} 
+		else if(!nodeFrom && !nodeTo){		//both dont exist
+			nodeFrom = new Node();
+			nodeTo = new Node();
+			nodeFrom->value = from;
+			name[counter++] = from;
+			nodeTo->value = dest;
+			name[counter++] = dest;
+			nodeTo->edgeList = edgeset;
+			nodeFrom->edgeList = edgeset;
+			nodeFrom->addEdgeTo(nodeTo);
+			nodeTo->addEdgeTo(nodeFrom);
+			nodeList[counter1++]=nodeFrom;
+			nodeList[counter1++]=nodeTo;
+		}
+		else if(!nodeFrom && nodeTo){			//from airport does not exist
+			*nodeFrom = new Node();
+			nodeFrom->value = from;
+			name[counter++]=from;
+			nodeFrom->edgeList = edgeset;
+			nodeFrom->addEdgeTo(nodeTo);
+			nodeTo->addEdgeTo(nodeFrom);
+			nodeList[counter1++]=nodeFrom;
+		}
+		else if(ndoeFrom && !nodeTo){ 		//dest airport does not exist
+			*nodeTo = new Node();
+			nodeTo->value = dest;
+			name[counter++]=dest;
+			nodeTo->edgeList = edgeset;
+			nodeFrom->addEdgeTo(nodeTo);
+			nodeTo->addEdgeTo(nodeFrom);
+			nodeList[counter1++]=nodeTo;
+		}
+	
+		
+	}
 }
-int checker(string name,node array[],int length){
-	for(int i = 0; i<length;i++){
-		if(name == array[i].name){
+int * Graph::getindex(string value){			//get the index for following array
+	for(int i = 0;i<numair;i++){
+		if(name[i].compare(value) == 0){
 			return i;
-		}
-		else{
-			return -1;
 		}
 	}
 	return -1;
 }
 
+Node * Graph::findNode(string value) {			//find the node with its name
+	for(Node * node : nodeList) {
+		if(!node->value.compare(value)) {
+			return node;
+		}
+	}
+	
+	return NULL;
+}
+Node * Graph::findMinNode(Node* ori) {			//find the node which has min edge weight with ori node;
+	Node* minNode;
+	double min = ori->edgeList[0]->weight;
+	for(int i = 1;i<ori->numOfEdge;i++){
+		if(ori->edgeList[i]->weight < min){
+			min = ori->edgeList[i]->weight;
+			minNode = ori->edgeList[i]->to;
+		}
+		
+	}
+	
+	return minNode;
+}
+double * Graph::findMinWeight(Node* ori) {		//find the weight of the min edge of ori node;
+	Node* minNode;
+	double min = ori->edgeList[0]->weight;
+	for(int i = 1;i<ori->numOfEdge;i++){
+		if(ori->edgeList[i]->weight < min){
+			min = ori->edgeList[i]->weight;
+			minNode = ori->edgeList[i]->to;
+		}
+		
+	}
+	
+	return min;
+}
+
+Edge * Graph::findEdge(Node * node, string value) {//see if the edge existed
+	for(Edge * edge : Node->edgeList) {
+		if(edge->to.value.compare(value)) {
+			return edge; 
+		}
+	}
+	return NULL;
+}
 // Code for part 1. Print out the sequence of airports and price
 // of the trip.
-int Graph::find_ticket(const string &source,const string &destination)
+void Graph::find_ticket(const string &source,const string &destination)
 {
-  	int num = checker(source,this.array,this.num_city);
- 	this.array[num].distance = 0;
- 	for(int i = 0;i < this.array[num].nume;i++){
- 		if(*(this.array[num].po).c1.name != this.array[num].name{
- 			*(this.array[num].po).c2.distance = *(this.array[num].po).price;
- 		}
- 		else {
- 			*(this.array[num].po).c1.distance = *(this.array[num].po).price;
- 		}
-
- 	}
-
-
+	double dis = 0.0; //static double to calculate the distance of current node to start node
+	double min_distance[numair];//array to store the distance from start node to each node;
+	//Node * prev[numair];
+	Node* ori =  (source);//get the first node;
+	Node* nextNode;//declare a node which is the minnode of ori
+	for(int i = 0;i<numedge;i++){
+		min_distance[i] = MINDOUBLE;//initialize the array to store distance
+	}
+	min_distance[getindex(ori->value)] = 0;// the distance to itself is 0
+	for(int j = 0;j <ori->numOfEdge;j++){//store the distance of the node which is directly connected to ori node
+		int index = getindex(ori->edgeList[j]->to->value);
+		min_distance[index] = ori->edgeList[j]->weight;
+	}
+	while(trueset<=numair){//end condition all node are visited
+		nextNode = findMinNode(ori);//find the min node of the ori node
+		dis+= findMinWeight(ori);//store the distance from current node to ori
+		ori->visited = true;//set visited
+		trueset++;//number to end the loop
+		for(int i = 0;i < nextNode->numOfEdge;i++){//expand the current node
+			int numindex = getindex(nextNode->edgeList[i]->to->value);//get the index of all the connected node of current node
+			if(min_distance[numindex] > dis + nextNode->edgeList[i]->weight){//if using this node is shorter
+				min_distance[numindex] = dis + nextNode->edgeList[i]->weight;//change the distance in the distance array
+			}
+		}
+		ori = nextNode;//use current node as ori node for next expand
+	}
+	
+	double finalprice = min_distance[getindex(destination)];//find the final price of the destination
+	if(finalprice == MINDOUBLE){
+		cout<<"not possible"<<endl;
+		return;//check if the destination is unreachable
+	}
+	cout<<finalprice;//output the price;n 
+	
+	
 
 }
 
